@@ -1,5 +1,12 @@
 #!/bin/sh
+set -euo pipefail
+
 export PGDATA=/var/lib/postgresql/data
+
+if [ -z ${DB_USER:-} ] || [ -z ${DB_PASS:-} ] || [ -z ${DB_NAME:-} ]; then
+    echo "ERROR: DB_USER, DB_PASS, and DB_NAME environment variables must be set!"
+    exit 1
+fi
 
 if [ ! -d "$PGDATA/base" ]; then
     echo "Initializing database storage..."

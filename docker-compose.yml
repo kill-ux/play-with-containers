@@ -3,6 +3,7 @@ services:
     container_name: inventory-db
     build:
       context: srcs/postgres-db
+    restart: always
     environment:
       - DB_USER=${INVENTORY_DB_USER}
       - DB_PASS=${INVENTORY_DB_PASS}
