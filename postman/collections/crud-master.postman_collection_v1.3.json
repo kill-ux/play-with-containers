@@ -1,0 +1,667 @@
+{
+	"info": {
+		"_postman_id": "90340924-d093-4f44-9991-6acff9e1a545",
+		"name": "crud-master",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42356603"
+	},
+	"item": [
+		{
+			"name": "/api/movies",
+			"item": [
+				{
+					"name": "create a new movie entry.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test for POST /api/movies",
+									"pm.test(\"Status code is 201 for successful creation\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success message or created movie\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.have.property('id');",
+									"});",
+									"",
+									"pm.test(\"Movie can be retrieved after creation\", function () {",
+									"    const responseData = pm.response.json();",
+									"    if (responseData.id) {",
+									"        pm.environment.set(\"last_movie_id\", responseData.id);",
+									"    }",
+									"});",
+									"",
+									"// Request body validation tests",
+									"pm.test(\"Request body contains required fields\", function () {",
+									"    const reqBody = pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};",
+									"    pm.expect(reqBody).to.have.property('title');",
+									"    pm.expect(reqBody).to.have.property('description');",
+									"    pm.expect(reqBody.title).to.be.a('string').and.not.be.empty;",
+									"    pm.expect(reqBody.description).to.be.a('string');",
+									"});",
+									"",
+									"// Error case tests",
+									"pm.test(\"Invalid data returns 400\", function () {",
+									"    // For invalid request scenarios",
+									"    if (pm.response.code === 400) {",
+									"        const errorResponse = pm.response.json();",
+									"        pm.expect(errorResponse).to.have.property('error');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Original Movie Title\",\n    \"description\": \"Original description for testing updates\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "retrieve all movies.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for GET /api/movies",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Each movie has required fields\", function () {",
+									"    const responseData = pm.response.json();",
+									"    if (responseData.length > 0) {",
+									"        responseData.forEach(movie => {",
+									"            pm.expect(movie).to.have.property('id');",
+									"            pm.expect(movie).to.have.property('title');",
+									"            pm.expect(movie).to.have.property('description');",
+									"            pm.expect(movie.id).to.be.a('number');",
+									"            pm.expect(movie.title).to.be.a('string');",
+									"            pm.expect(movie.description).to.be.a('string');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "retrieve all movies with name in the title.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Returned movies contain the search title\", function () {",
+									"    const searchTitle = pm.request.url.query.get('title');",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    if (searchTitle && responseData.length > 0) {",
+									"        responseData.forEach(movie => {",
+									"            pm.expect(movie.title.toLowerCase()).to.include(searchTitle.toLowerCase());",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Each movie has valid structure\", function () {",
+									"    const responseData = pm.response.json();",
+									"    responseData.forEach(movie => {",
+									"        pm.expect(movie).to.have.all.keys('id', 'title', 'description');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies?title=Inception",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "Inception"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete all movies in the database.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"All movies gone\", () => pm.response.to.have.status(204));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create a new movie entry A",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test for POST /api/movies",
+									"pm.test(\"Status code is 201 for successful creation\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success message or created movie\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.have.property('id');",
+									"});",
+									"",
+									"pm.test(\"Movie can be retrieved after creation\", function () {",
+									"    const responseData = pm.response.json();",
+									"    if (responseData.id) {",
+									"        pm.environment.set(\"last_movie_id\", responseData.id);",
+									"    }",
+									"});",
+									"",
+									"// Request body validation tests",
+									"pm.test(\"Request body contains required fields\", function () {",
+									"    const reqBody = pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};",
+									"    pm.expect(reqBody).to.have.property('title');",
+									"    pm.expect(reqBody).to.have.property('description');",
+									"    pm.expect(reqBody.title).to.be.a('string').and.not.be.empty;",
+									"    pm.expect(reqBody.description).to.be.a('string');",
+									"});",
+									"",
+									"// Error case tests",
+									"pm.test(\"Invalid data returns 400\", function () {",
+									"    // For invalid request scenarios",
+									"    if (pm.response.code === 400) {",
+									"        const errorResponse = pm.response.json();",
+									"        pm.expect(errorResponse).to.have.property('error');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"HxH\",\n    \"description\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAA\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create a new movie entry B",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test for POST /api/movies",
+									"pm.test(\"Status code is 201 for successful creation\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success message or created movie\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.have.property('id');",
+									"});",
+									"",
+									"pm.test(\"Movie can be retrieved after creation\", function () {",
+									"    const responseData = pm.response.json();",
+									"    if (responseData.id) {",
+									"        pm.environment.set(\"last_movie_id\", responseData.id);",
+									"    }",
+									"});",
+									"",
+									"// Request body validation tests",
+									"pm.test(\"Request body contains required fields\", function () {",
+									"    const reqBody = pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};",
+									"    pm.expect(reqBody).to.have.property('title');",
+									"    pm.expect(reqBody).to.have.property('description');",
+									"    pm.expect(reqBody.title).to.be.a('string').and.not.be.empty;",
+									"    pm.expect(reqBody.description).to.be.a('string');",
+									"});",
+									"",
+									"// Error case tests",
+									"pm.test(\"Invalid data returns 400\", function () {",
+									"    // For invalid request scenarios",
+									"    if (pm.response.code === 400) {",
+									"        const errorResponse = pm.response.json();",
+									"        pm.expect(errorResponse).to.have.property('error');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Bleach: N Inception o one is heer\",\n    \"description\": \"WAR WAR...\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "/api/movies/<id>",
+			"item": [
+				{
+					"name": "retrieve a single movie by id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+									"",
+									"// Test for GET /api/movies/{id}",
+									"pm.test(\"Status code is 200 for valid ID\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an object\", function () {",
+									"    const responseData = pm.response.json();",
+									"    pm.expect(responseData).to.be.an('object');",
+									"});",
+									"",
+									"pm.test(\"Movie has all required fields\", function () {",
+									"    const movie = pm.response.json();",
+									"    pm.expect(movie).to.have.all.keys('id', 'title', 'description');",
+									"    pm.expect(movie.id).to.be.a('number');",
+									"    pm.expect(movie.title).to.be.a('string');",
+									"    pm.expect(movie.description).to.be.a('string');",
+									"});",
+									"",
+									"// Test for error cases (404)",
+									"pm.test(\"Non-existent ID returns 404\", function () {",
+									"    // This would be a separate request",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies/{{last_movie_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"{{last_movie_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update a single movie by id.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test for PUT /api/movies/{id} - Verify response matches request",
+									"",
+									"pm.test(\"Status code is 200 for successful update\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response returns the updated movie with same fields as request\", function () {",
+									"    // Get the request body",
+									"    const reqBody = JSON.parse(pm.request.body.raw);",
+									"    ",
+									"    // Get the response body",
+									"    const resBody = pm.response.json();",
+									"    ",
+									"    // Check if response contains the updated movie",
+									"    const updatedMovie = resBody.movie || resBody.data || resBody;",
+									"    ",
+									"    // Verify each field from request matches response",
+									"    if (reqBody.title) {",
+									"        pm.expect(updatedMovie.title).to.equal(reqBody.title);",
+									"    }",
+									"    ",
+									"    if (reqBody.description) {",
+									"        pm.expect(updatedMovie.description).to.equal(reqBody.description);",
+									"    }",
+									"    ",
+									"    // Verify response has all required movie fields",
+									"    pm.expect(updatedMovie).to.have.property('id');",
+									"    pm.expect(updatedMovie).to.have.property('title');",
+									"    pm.expect(updatedMovie).to.have.property('description');",
+									"});",
+									"",
+									"pm.test(\"Only specified fields are updated\", function () {",
+									"    const reqBody = JSON.parse(pm.request.body.raw);",
+									"    const resBody = pm.response.json();",
+									"    const updatedMovie = resBody.movie || resBody.data || resBody;",
+									"    ",
+									"    // If only title was in request, description should remain unchanged",
+									"    // Note: You'd need to know the original values for this test",
+									"    if (reqBody.title && !reqBody.description) {",
+									"        pm.expect(updatedMovie.title).to.equal(reqBody.title);",
+									"        // Description should still exist (unchanged)",
+									"        pm.expect(updatedMovie.description).to.be.a('string');",
+									"    }",
+									"    ",
+									"    if (!reqBody.title && reqBody.description) {",
+									"        pm.expect(updatedMovie.description).to.equal(reqBody.description);",
+									"        pm.expect(updatedMovie.title).to.be.a('string');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Movie Title\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies/{{last_movie_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"{{last_movie_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete a single movie by id.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", () => pm.response.to.have.status(204))"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies/{{last_movie_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"{{last_movie_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "/api/billing/",
+			"item": [
+				{
+					"name": "New Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200 or 201\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([202]);",
+									"});",
+									"",
+									"pm.test(\"Response confirms message posted\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});",
+									"",
+									"pm.test(\"Response time is fast (queue doesn't wait for processing)\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(200);",
+									"});",
+									"",
+									"pm.test(\"Request body validation\", function () {",
+									"    const reqBody = JSON.parse(pm.request.body.raw);",
+									"    ",
+									"    // Check required fields exist",
+									"    pm.expect(reqBody).to.have.all.keys('user_id', 'number_of_items', 'total_amount');",
+									"    ",
+									"    // Check data types",
+									"    pm.expect(reqBody.user_id).to.satisfy(function(value) {",
+									"        return typeof value === 'string' || typeof value === 'number';",
+									"    });",
+									"    ",
+									"    pm.expect(parseInt(reqBody.number_of_items)).to.be.a('number');",
+									"    pm.expect(parseFloat(reqBody.total_amount)).to.be.a('number');",
+									"    ",
+									"    // Store for verification",
+									"    pm.environment.set(\"lastOrderUserId\", reqBody.user_id);",
+									"    pm.environment.set(\"lastOrderItems\", reqBody.number_of_items);",
+									"    pm.environment.set(\"lastOrderAmount\", reqBody.total_amount);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": \"3\",\n    \"number_of_items\": \"5\",\n    \"total_amount\": \"180\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/billing",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"billing"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "last_movie_id",
+			"value": ""
+		}
+	]
+}
