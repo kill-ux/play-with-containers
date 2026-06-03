@@ -1,5 +1,5 @@
 #!/bin/sh
 set -euo pipefail
 
-rabbitmqctl add_user rabbit_user password || true
-rabbitmqctl set_permissions -p / rabbit_user ".*" ".*" ".*" || true
+rabbitmqctl add_user $RABBITMQ_USER $RABBITMQ_PASS || true
+rabbitmqctl set_permissions -p / $RABBITMQ_USER ".*" ".*" ".*" || true
