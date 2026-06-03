@@ -4,7 +4,12 @@ services:
     build:
       context: srcs/postgres-db
     restart: always
+    volumes:
+      - inventory_database:/var/lib/postgresql/data
     environment:
       - DB_USER=${INVENTORY_DB_USER}
       - DB_PASS=${INVENTORY_DB_PASS}
       - DB_NAME=${INVENTORY_DB_NAME}
+
+volumes:
+  inventory_database:
