@@ -4,12 +4,53 @@ services:
     build:
       context: srcs/postgres-db
     restart: always
-    volumes:
-      - inventory_database:/var/lib/postgresql/data
     environment:
       - DB_USER=${INVENTORY_DB_USER}
       - DB_PASS=${INVENTORY_DB_PASS}
       - DB_NAME=${INVENTORY_DB_NAME}
+    expose:
+      - 5432
+    volumes:
+      - inventory_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+      start_period: 30s
+
+  inventory-app:
+    container_name: inventory-app
+    build:
+      context: srcs/inventory-app
+    env_file: .env
+    restart: always
+    expose:
+      - ${INVENTORY_APP_PORT}
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+
+  billing-db:
+    container_name: billing-db
+    build:
+      context: srcs/postgres-db
+    restart: always
+    environment:
+      - DB_USER=${BILLING_DB_USER}
+      - DB_PASS=${BILLING_DB_PASS}
+      - DB_NAME=${BILLING_DB_NAME}
+    expose:
+      - 5432
+    volumes:
+      - billing_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+      start_period: 30s
 
 volumes:
   inventory_database:
+  billing_database:
