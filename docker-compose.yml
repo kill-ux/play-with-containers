@@ -53,10 +53,19 @@ services:
 
   billing-queue:
     container_name: billing-queue
+    hostname: rabbit-host
     build:
       context: srcs/rabbitmq
-    # restart: always
+    restart: always
     env_file: .env
+    expose:
+      - ${RABBITMQ_PORT}
+    healthcheck:
+      test: ["rabbitmq-diagnostics", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+      start_period: 30s
 
 volumes:
   inventory_database:
