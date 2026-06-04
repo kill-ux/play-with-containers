@@ -1,11 +1,9 @@
 #!/bin/sh
 set -euo pipefail
-echo $HOSTNAME
 rabbitmq-server &
 TEMP_PID=$!
 
 echo "Waiting for RabbitMQ to become fully responsive..."
-echo "TEMP_PID=> $TEMP_PID"
 rabbitmqctl wait --timeout 15 /var/lib/rabbitmq/mnesia/rabbit@$HOSTNAME.pid
 
 rabbitmqctl add_user $RABBITMQ_USER $RABBITMQ_PASS || true

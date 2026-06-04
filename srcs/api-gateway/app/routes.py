@@ -6,8 +6,14 @@ import json
 
 gateway_bp = Blueprint("gateway_bp", __name__)
 
-INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL")
-BILLING_SERVICE_URL = os.getenv("BILLING_SERVICE_URL")
+INVENTORY_APP_HOST = os.getenv("INVENTORY_APP_HOST")
+INVENTORY_APP_PORT = os.getenv("INVENTORY_APP_PORT")
+INVENTORY_SERVICE_URL =  f"http://{INVENTORY_APP_HOST}:{INVENTORY_APP_PORT}"
+
+BILLING_APP_HOST = os.getenv("BILLING_APP_HOST")
+BILLING_APP_PORT = os.getenv("BILLING_APP_PORT")
+BILLING_SERVICE_URL =  f"http://{BILLING_APP_HOST}:{BILLING_APP_PORT}"
+
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER")
@@ -60,7 +66,6 @@ def proxy_to_inventory(subpath=""):
 @gateway_bp.route(API_ORDERS_URL + "/", methods=["GET"])
 def proxy_to_billing():
     """Directly proxy GET requests to the Billing Service"""
-    # The billing app has /api/orders prefix
     forwarded_url = BILLING_SERVICE_URL.rstrip("/") + API_ORDERS_URL
 
     try:

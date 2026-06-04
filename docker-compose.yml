@@ -15,9 +15,9 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready"]
       interval: 5s
-      timeout: 1s
+      timeout: 3s
       retries: 5
-      start_period: 30s
+      start_period: 20s
 
   inventory-app:
     container_name: inventory-app
@@ -47,9 +47,9 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready"]
       interval: 5s
-      timeout: 1s
+      timeout: 3s
       retries: 5
-      start_period: 30s
+      start_period: 20s
 
   billing-queue:
     container_name: billing-queue
@@ -60,13 +60,47 @@ services:
     env_file: .env
     expose:
       - ${RABBITMQ_PORT}
+    volumes:
+      - billing-queue-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["rabbitmq-diagnostics", "ping"]
-      interval: 2s
-      timeout: 1s
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 5
-      start_period: 30s
+      start_period: 15s
+  
+  billing-app:
+    container_name: billing-app
+    build:
+      context: srcs/billing-app
+    env_file: .env
+    environment:
+      - RABBITMQ_HOST=billing-queue
+    restart: always
+    expose:
+      - ${BILLING_APP_PORT}
+    depends_on:
+      billing-db:
+        condition: service_healthy
+      billing-queue:
+        condition: service_healthy
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: srcs/api-gateway
+    env_file: .env
+    environment:
+      - RABBITMQ_HOST=billing-queue
+      - INVENTORY_APP_HOST=inventory-app
+      - BILLING_APP_HOST=billing-app
+    ports:
+      - ${APIGATEWAY_PORT}:${APIGATEWAY_PORT}
+    depends_on:
+      billing-queue:
+        condition: service_healthy
 
 volumes:
   inventory_database:
   billing_database:
+  billing-queue-data:

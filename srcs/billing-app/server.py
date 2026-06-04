@@ -1,18 +1,22 @@
-import threading
-from dotenv import load_dotenv
-load_dotenv()
+from app.consume_queue import consume_and_store_order
+from app.orders import Base
 
-from app import create_app, get_env_variable
-from app.worker import start_order_consumer
+from sqlalchemy import create_engine
 
-app = create_app()
+import os
 
-if __name__ == "__main__":
-    HOST = get_env_variable("BILLING_HOST")
-    PORT = get_env_variable("BILLING_PORT", int)
-    
-    # Start RabbitMQ consumer in a separate thread
-    worker_thread = threading.Thread(target=start_order_consumer, args=(app,), daemon=True)
-    worker_thread.start()
 
-    app.run(host=HOST, port=PORT)
+BILLING_DB_USER = os.getenv("BILLING_DB_USER")
+BILLING_DB_PASSWORD = os.getenv("BILLING_DB_PASS")
+BILLING_DB_NAME = os.getenv("BILLING_DB_NAME")
+
+DB_URI = (
+    "postgresql://"
+    f'{BILLING_DB_USER}:{BILLING_DB_PASSWORD}'
+    f'@billing-db:5432/{BILLING_DB_NAME}'
+)
+
+engine = create_engine(DB_URI)
+Base.metadata.create_all(engine)
+
+consume_and_store_order(engine)
