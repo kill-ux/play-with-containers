@@ -1,23 +1,7 @@
 from flask import Flask
-from sqlalchemy.exc import OperationalError
 from .config import Config
 from .models import db
 import time
-
-def wait_for_db(max_retries=10, delay=2):
-    """Wait for database to be ready"""
-    for attempt in range(max_retries):
-        try:
-            db.engine.connect()
-            print(f"Database connected on attempt {attempt + 1}")
-            return True
-        except OperationalError as e:
-            print(f"Database not ready (attempt {attempt + 1}/{max_retries}): {e}")
-            if attempt < max_retries - 1:
-                time.sleep(delay)
-            else:
-                raise
-    return False
 
 def create_app():
     app = Flask(__name__)
@@ -32,7 +16,6 @@ def create_app():
 
     db.init_app(app)
     with app.app_context():
-        wait_for_db()
         db.create_all()
 
     @app.errorhandler(Exception)

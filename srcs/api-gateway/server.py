@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from waitress import serve
 load_dotenv()
 
 import os
@@ -10,5 +11,5 @@ app = create_app()
 PORT = get_env_variable("APIGATEWAY_PORT")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=PORT)
+    serve(app,listen=f"*:{PORT}")
     

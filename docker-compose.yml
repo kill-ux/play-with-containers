@@ -45,7 +45,7 @@ services:
     volumes:
       - billing_database:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$DB_USER -d $$DB_NAME"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -77,8 +77,6 @@ services:
     environment:
       - RABBITMQ_HOST=billing-queue
     restart: always
-    expose:
-      - ${BILLING_APP_PORT}
     depends_on:
       billing-db:
         condition: service_healthy
@@ -99,6 +97,8 @@ services:
     depends_on:
       billing-queue:
         condition: service_healthy
+      inventory-app:
+        condition: service_started
 
 volumes:
   inventory_database:

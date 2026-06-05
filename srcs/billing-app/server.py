@@ -1,10 +1,9 @@
 from app.consume_queue import consume_and_store_order
 from app.orders import Base
-
 from sqlalchemy import create_engine
-
 import os
 
+print("[1] Starting billing app imports...", flush=True)
 
 BILLING_DB_USER = os.getenv("BILLING_DB_USER")
 BILLING_DB_PASSWORD = os.getenv("BILLING_DB_PASS")
@@ -18,5 +17,6 @@ DB_URI = (
 
 engine = create_engine(DB_URI)
 Base.metadata.create_all(engine)
+
 
 consume_and_store_order(engine)

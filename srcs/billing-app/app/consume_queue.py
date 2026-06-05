@@ -21,8 +21,11 @@ def consume_and_store_order(engine):
             credentials
         )
     )
+    print("[5] Connected to RabbitMQ successfully!", flush=True)
     channel = connection.channel()
-    channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+    print("[6] Channel created", flush=True)
+    channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True, arguments={"x-queue-type": "quorum"})
+    print(f"[7] Queue '{RABBITMQ_QUEUE}' declared", flush=True)
 
     def callback(ch, method, properties, body):
         print(f" [.] received: {body.decode()}")
@@ -38,4 +41,5 @@ def consume_and_store_order(engine):
         queue=RABBITMQ_QUEUE,
         on_message_callback=callback
     )
+    print("[*] billing app started cunsuming msgs...", flush=True)
     channel.start_consuming()
