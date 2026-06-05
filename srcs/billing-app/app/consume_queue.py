@@ -26,13 +26,13 @@ def consume_and_store_order(engine):
     print("[6] Channel created", flush=True)
     channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True, arguments={"x-queue-type": "quorum"})
     print(f"[7] Queue '{RABBITMQ_QUEUE}' declared", flush=True)
-
+    
     def callback(ch, method, properties, body):
-        print(f" [.] received: {body.decode()}")
+        print(f" [.] received: {body.decode()}", flush=True)
         try:
             new_order = json.loads(body.decode())
             create_order(engine, new_order)
-            print(" [x] created new order")
+            print(" [x] created new order", flush=True)
             ch.basic_ack(delivery_tag=method.delivery_tag)
         except Exception as e:
             print(f" [-] error: {e}")

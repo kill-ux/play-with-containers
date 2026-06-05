@@ -7,6 +7,4 @@ RUN apt-get update && \
 COPY --chown=postgres:postgres command/setup_db.sh /tmp/setup_db.sh
 RUN chmod +x /tmp/setup_db.sh
 
-USER postgres
-
 ENTRYPOINT [ "bash", "/tmp/setup_db.sh" ]

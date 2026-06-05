@@ -9,35 +9,42 @@ if [ -z ${DB_USER:-} ] || [ -z ${DB_PASS:-} ] || [ -z ${DB_NAME:-} ]; then
 fi
 
 PG_VERSION=$(ls /usr/lib/postgresql | grep -E '^[0-9]+$')
-export PATH="/usr/lib/postgresql/$PG_VERSION/bin:$PATH"
+PG_BIN="/usr/lib/postgresql/$PG_VERSION/bin"
 
 if [ ! -d "$PGDATA/base" ]; then
     mkdir -p "$PGDATA"
+    chown -R postgres:postgres "$PGDATA"
+    chmod 700 "$PGDATA"
 
     echo "Initializing database storage..."
-    initdb
+    su postgres -c "$PG_BIN/initdb -D '$PGDATA'"
 
-    echo "local all all trust" > "$PGDATA/pg_hba.conf"
-    echo "host all all 0.0.0.0/0 scram-sha-256" >> "$PGDATA/pg_hba.conf"
+    echo "Configuring authentication..."
+    cat > "$PGDATA/pg_hba.conf" << EOF
+local all all trust
+host all all 0.0.0.0/0 scram-sha-256
+EOF
 
     echo "Starting temporary cluster for setup..."
-    postgres -k /run/postgresql &
-    TEMP_PID=$!
+    # su postgres -c "$PG_BIN/postgres -D '$PGDATA' -k /run/postgresql" &
+    su postgres -c "$PG_BIN/pg_ctl -D '$PGDATA' -w start"
+    # TEMP_PID=$!
 
-    until pg_isready ; do
-        echo "Waiting for database to start..."
-        sleep 0.25
-    done
+    # until su postgres -c "$PG_BIN/pg_isready"; do
+    #     echo "Waiting for database to start..."
+    #     sleep 0.5
+    # done
 
     echo "Configuring roles and databases..."
-    psql -c "ALTER USER postgres WITH PASSWORD '$DB_PASS';"
-    psql -c "CREATE USER $DB_USER WITH SUPERUSER PASSWORD '$DB_PASS';"
-    createdb -O $DB_USER $DB_NAME
+    su postgres -c "$PG_BIN/psql -d postgres -c \"ALTER USER postgres WITH PASSWORD '$DB_PASS';\""
+    su postgres -c "$PG_BIN/psql -d postgres -c \"CREATE USER $DB_USER WITH SUPERUSER PASSWORD '$DB_PASS';\""
+    su postgres -c "$PG_BIN/createdb -O $DB_USER $DB_NAME"
 
     echo "Shutting down temporary setup cluster..."
-    kill $TEMP_PID
-    wait $TEMP_PID
+    # kill $TEMP_PID
+    # wait $TEMP_PID 2>/dev/null || true
+    su postgres -c "$PG_BIN/pg_ctl -D '$PGDATA' -m fast stop"
 fi
 
 echo "Starting PostgreSQL in the foreground..."
-exec postgres -h "*"
+exec su postgres -c "$PG_BIN/postgres -D '$PGDATA' -h '*'"
