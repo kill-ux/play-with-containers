@@ -15,7 +15,7 @@ DB_URI = (
     f'@billing-db:5432/{BILLING_DB_NAME}'
 )
 
-engine = create_engine(DB_URI)
+engine = create_engine(DB_URI, pool_pre_ping=True)
 Base.metadata.create_all(engine)
 
 

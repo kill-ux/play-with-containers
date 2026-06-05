@@ -1,6 +1,7 @@
 import os
 import pika
 import json
+import time
 
 from app.orders import create_order
 
@@ -34,8 +35,13 @@ def consume_and_store_order(engine):
             create_order(engine, new_order)
             print(" [x] created new order", flush=True)
             ch.basic_ack(delivery_tag=method.delivery_tag)
-        except Exception as e:
-            print(f" [-] error: {e}")
+        except (json.JSONDecodeError, ValueError) as error:
+            print(f"Discarding invalid billing message: {error}", flush=True)
+            channel.basic_ack(delivery_tag=method.delivery_tag)
+        except Exception as error:
+            print(f"Failed to process billing message: {error}", flush=True)
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+            time.sleep(5)
 
     channel.basic_consume(
         queue=RABBITMQ_QUEUE,
