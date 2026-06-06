@@ -2,4 +2,4 @@ Flask
 pika
 requests
 python-dotenv
-waitress
+gunicorn

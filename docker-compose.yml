@@ -1,6 +1,7 @@
 services:
   inventory-db:
     container_name: inventory-db
+    image: inventory-db
     build:
       context: srcs/postgres-db
     restart: always
@@ -21,6 +22,7 @@ services:
 
   inventory-app:
     container_name: inventory-app
+    image: inventory-app
     build:
       context: srcs/inventory-app
     env_file: .env
@@ -33,6 +35,7 @@ services:
 
   billing-db:
     container_name: billing-db
+    image: billing-db
     build:
       context: srcs/postgres-db
     restart: always
@@ -53,6 +56,7 @@ services:
 
   billing-queue:
     container_name: billing-queue
+    image: billing-queue
     hostname: rabbit-host
     build:
       context: srcs/rabbitmq
@@ -71,12 +75,17 @@ services:
   
   billing-app:
     container_name: billing-app
+    image: billing-app
     build:
       context: srcs/billing-app
     env_file: .env
     environment:
       - RABBITMQ_HOST=billing-queue
     restart: always
+    expose:
+      - ${BILLING_APP_PORT}
+    ports:
+      - ${BILLING_APP_PORT}:${BILLING_APP_PORT}
     depends_on:
       billing-db:
         condition: service_healthy
@@ -85,9 +94,12 @@ services:
 
   api-gateway:
     container_name: api-gateway
+    image: api-gateway
     build:
       context: srcs/api-gateway
     env_file: .env
+    volumes:
+      - api-gateway-logs:/app/logs
     environment:
       - RABBITMQ_HOST=billing-queue
       - INVENTORY_APP_HOST=inventory-app
@@ -104,3 +116,4 @@ volumes:
   inventory_database:
   billing_database:
   billing-queue-data:
+  api-gateway-logs:

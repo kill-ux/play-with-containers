@@ -22,7 +22,6 @@ RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT"))
 
 API_MOVIES_URL = "/api/movies"
 API_BILLING_URL = "/api/billing"
-API_ORDERS_URL = "/api/orders"
 
 
 @gateway_bp.route(API_MOVIES_URL + "/", methods=["GET", "POST", "DELETE"])
@@ -42,35 +41,34 @@ def proxy_to_inventory(subpath=""):
             params=request.args,
             allow_redirects=False,
         )
+        
+        response_headers = dict(resp.headers)
 
-        excluded_headers = {
-            "content-encoding",
-            "content-length",
-            "transfer-encoding",
-            "connection",
-        }
+        response_headers.pop("Transfer-Encoding", None)
+        response_headers.pop("Content-Length", None)
+        response_headers.pop("Connection", None)
 
-        headers = [
-            (k, v)
-            for k, v in resp.raw.headers.items()
-            if k.lower() not in excluded_headers
-        ]
-
-        return resp.content, resp.status_code, headers
+        return resp.content, resp.status_code, response_headers
     except requests.exceptions.ConnectionError as e:
         print(f"Error connecting to inventory service: {e}")
         return {"error": "Inventory service is down"}, 503
 
 
 # --- BILLING ROUTES ---
-@gateway_bp.route(API_ORDERS_URL + "/", methods=["GET"])
+@gateway_bp.route(API_BILLING_URL + "/", methods=["GET"])
 def proxy_to_billing():
     """Directly proxy GET requests to the Billing Service"""
-    forwarded_url = BILLING_SERVICE_URL.rstrip("/") + API_ORDERS_URL
+    forwarded_url = BILLING_SERVICE_URL.rstrip("/") + API_BILLING_URL
 
     try:
-        resp = requests.get(forwarded_url, params=request.args)
-        return resp.content, resp.status_code
+        resp = requests.get(forwarded_url, params=request.args, allow_redirects=False)
+
+        response_headers = dict(resp.headers)
+        response_headers.pop("Transfer-Encoding", None)
+        response_headers.pop("Content-Length", None)
+        response_headers.pop("Connection", None)
+
+        return resp.content, resp.status_code, response_headers
     except requests.exceptions.ConnectionError:
         return {"error": "Billing service is down"}, 503
 
@@ -81,32 +79,24 @@ def queue_order():
     if not RABBITMQ_HOST:
         return {"error": "RabbitMQ host not configured"}, 500
 
-    print("startttttttttttttttt")
-
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
-    print(RABBITMQ_USER)
-    print(RABBITMQ_PASS)
-    print(RABBITMQ_HOST)
-    print(RABBITMQ_QUEUE)
-
-
     try:
         print("conn start")
-        # Connect to RabbitMQ
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host=RABBITMQ_HOST,port=RABBITMQ_PORT,credentials=credentials)
         )
         channel = connection.channel()
-        print("conn established")
 
-
-        # Ensure the queue exists
         channel.queue_declare(
             queue=RABBITMQ_QUEUE, durable=True, arguments={"x-queue-type": "quorum"}
         )
 
-        # Publish the message
-        message = request.get_json()
+        message = request.get_json() or {}
+        required_keys = ["user_id", "number_of_items", "total_amount"]
+
+        if not all(k in message for k in required_keys):
+            return {"error": "Missing required fields: user_id, number_of_items, total_amount"}, 400
+
         channel.basic_publish(
             exchange="",
             routing_key=RABBITMQ_QUEUE,
