@@ -1,132 +1,229 @@
-# CRUD Master - Microservices Movie Platform
+# play-with-containers
 
-A complete microservices-based application for managing a movie inventory and handling order processing. This project demonstrates synchronous HTTP communication and asynchronous message queuing (RabbitMQ) across an isolated virtualized infrastructure.
+![Microservices Architecture](./resources/Microservices.png)
 
-## Architecture Overview
+## Overview
 
-The system consists of three primary services running in separate Ubuntu VMs managed by Vagrant:
+`play-with-containers` is a Docker Compose-based implementation of a microservices movie platform. It uses containerized Python services, two PostgreSQL databases, a RabbitMQ queue, and an API gateway to deliver a production-like multi-container architecture.
 
-1.  **API Gateway (`gateway-vm`)**: The entry point. It proxies HTTP requests to the Inventory service and pushes order messages to RabbitMQ for the Billing service.
-2.  **Inventory App (`inventory-vm`)**: A Flask REST API that manages a PostgreSQL database of movies.
-3.  **Billing App (`billing-vm`)**: A hybrid service containing a background worker that processes RabbitMQ messages and a REST API to view order history, backed by its own PostgreSQL database.
+This repository replaces the original Vagrant-based `crud-master` setup with Docker and Docker Compose, making deployment faster, reproducible, and easier to manage on Linux.
 
-## Project Structure
+## Architecture
 
-```text
-crud-master/
-├── postman
-│   ├── collections
-│   │   └── crud-master.postman_collection.json
-│   └── environments
-│       └── api-gatway.postman_environment.json
-├── README.md
-├── res
-│   ├── billing_app_file_map.svg
-│   └── billing_system_architecture.svg
-├── resum.md
-├── scripts
-│   ├── provision_billing.sh
-│   ├── provision_gateway.sh
-│   └── provision_inventory.sh
-├── srcs
-│   ├── api-gateway
-│   │   ├── app
-│   │   │   ├── __init__.py
-│   │   │   └── routes.py
-│   │   ├── requirements.txt
-│   │   └── server.py
-│   ├── billing-app
-│   │   ├── app
-│   │   │   ├── config
-│   │   │   │   └── config.py
-│   │   │   ├── controllers
-│   │   │   │   └── orders.py
-│   │   │   ├── __init__.py
-│   │   │   ├── models
-│   │   │   │   └── models.py
-│   │   │   └── worker.py
-│   │   ├── requirements.txt
-│   │   └── server.py
-│   └── inventory-app
-│       ├── app
-│       │   ├── config.py
-│       │   ├── __init__.py
-│       │   ├── models.py
-│       │   ├── __pycache__
-│       │   │   ├── config.cpython-312.pyc
-│       │   │   ├── config.cpython-313.pyc
-│       │   │   ├── __init__.cpython-312.pyc
-│       │   │   ├── __init__.cpython-313.pyc
-│       │   │   ├── models.cpython-312.pyc
-│       │   │   ├── models.cpython-313.pyc
-│       │   │   ├── routes.cpython-312.pyc
-│       │   │   └── routes.cpython-313.pyc
-│       │   └── routes
-│       │       ├── health.py
-│       │       ├── __init__.py
-│       │       └── movies.py
-│       ├── requirements.txt
-│       └── server.py
-├── Vagrantfile
-└── vagrant_install.sh
-```
+The application is built with the following services:
+
+- `api-gateway`: forwards HTTP requests to inventory and billing services, and publishes billing orders to RabbitMQ.
+- `inventory-app`: manages a movie inventory stored in a PostgreSQL database.
+- `billing-app`: consumes billing order messages from RabbitMQ and stores order history in a separate PostgreSQL database.
+- `inventory-db`: PostgreSQL database for inventory data.
+- `billing-db`: PostgreSQL database for billing data.
+- `billing-queue`: RabbitMQ server for asynchronous order processing.
+
+All containers are connected through a single Docker bridge network and managed by `docker compose`.
+
+## Key Features
+
+- Multi-service Docker Compose deployment
+- Separate PostgreSQL databases with persistent volumes
+- RabbitMQ queue for asynchronous billing processing
+- API gateway routing and message dispatching
+- Automatic container restart on failure
+- Environment-driven configuration via `.env`
 
 ## Prerequisites
 
-- **Vagrant** (v2.2+)
-- **VirtualBox**
+- Docker Engine installed
+- Docker Compose available (`docker compose`)
+- Linux host (Ubuntu tested)
 
-## Getting Started
+## Setup
 
-1.  **Clone the repository.**
-2.  **Launch the infrastructure:**
-    ```bash
-    vagrant up
-    ```
-    *Note: This will take a few minutes while it installs PostgreSQL, RabbitMQ, and Python on all three VMs.*
-3.  **Verify status:**
-    ```bash
-    vagrant status
-    ```
-    *All machines (gateway, inventory, billing) should be `running`.*
+1. Copy environment variables:
 
-## Testing the APIs
+```bash
+cp .env.example .env
+```
 
-The **API Gateway** is exposed on your local machine at `http://localhost:5000`.
+2. Review `.env` and update credentials if needed. Do not commit `.env`.
 
-### 1. Movie Inventory (Synchronous HTTP)
-- **Add a Movie:**
-  ```bash
-  curl -X POST http://localhost:5000/api/movies/ -H "Content-Type: application/json" -d '{"title": "Interstellar", "description": "Space exploration"}'
-  ```
-- **List Movies:**
-  ```bash
-  curl http://localhost:5000/api/movies/
-  ```
+3. Build and start all containers:
 
-### 2. Billing & Orders (Asynchronous RabbitMQ)
-- **Place an Order:**
-  ```bash
-  curl -X POST http://localhost:5000/api/billing/ -H "Content-Type: application/json" -d '{"user_id": "123", "number_of_items": "2", "total_amount": "50.00"}'
-  ```
-  *(Gateway returns `202 Accepted` immediately as the message enters the queue).*
-- **View Order History:**
-  ```bash
-  curl http://localhost:5000/api/orders/
-  ```
+```bash
+docker compose up --build -d
+```
 
-## Resilience & Process Management
+4. Confirm services are running:
 
-All services are managed by **PM2** inside the VMs. 
+```bash
+docker compose ps
+```
 
-### Testing System Resilience:
-1.  Stop the billing service: `vagrant ssh billing -c "sudo -u vagrant pm2 stop billing-api"`
-2.  Send an order: The order is successfully "Accepted" by the Gateway and held in RabbitMQ.
-3.  Start the service: `vagrant ssh billing -c "sudo -u vagrant pm2 start billing-api"`
-4.  The order is processed automatically as soon as the service recovers.
+5. Stop containers when finished:
 
-## Maintenance
+```bash
+docker compose stop
+```
 
-- **Stop VMs:** `vagrant halt`
-- **Rebuild from scratch:** `vagrant destroy -f && vagrant up`
-- **Check Logs:** `vagrant ssh <vm_name> -c "sudo -u vagrant pm2 logs"`
+6. Remove containers and network while keeping volumes:
+
+```bash
+docker compose down
+```
+
+7. Remove containers, network, and volumes:
+
+```bash
+docker compose down -v
+```
+
+## Makefile Convenience Commands
+
+Use the `Makefile` to simplify workflow:
+
+- `make up` — build and start services
+- `make stop` — stop services
+- `make down` — stop and remove containers/networks
+- `make clean` — remove containers, networks, and volumes
+- `make prune` — remove unused Docker images
+
+## Service Ports
+
+Only the API gateway is exposed to the host.
+
+- `api-gateway`: `3000`
+
+Internal service ports:
+
+- `inventory-app`: `8080`
+- `billing-app`: `8080`
+- `inventory-db`: `5432`
+- `billing-db`: `5432`
+- `billing-queue`: `5672`
+
+The gateway is the only external entry point for requests.
+
+## Persistent Volumes
+
+Docker Compose defines persistent volumes for:
+
+- `inventory_database` — inventory PostgreSQL data
+- `billing_database` — billing PostgreSQL data
+- `billing-queue-data` — RabbitMQ data
+- `api-gateway-logs` — gateway access logs
+
+## Environment Variables
+
+The `.env.example` file contains the required configuration:
+
+- `INVENTORY_DB_USER`
+- `INVENTORY_DB_PASS`
+- `INVENTORY_DB_NAME`
+- `BILLING_DB_USER`
+- `BILLING_DB_PASS`
+- `BILLING_DB_NAME`
+- `RABBITMQ_USER`
+- `RABBITMQ_PASS`
+- `RABBITMQ_QUEUE`
+- `RABBITMQ_PORT`
+- `INVENTORY_APP_PORT`
+- `BILLING_APP_PORT`
+- `APIGATEWAY_PORT`
+
+
+## API Usage
+
+All client requests should be sent through the API gateway at `http://localhost:3000`.
+
+### Inventory endpoints
+
+- List movies:
+
+```bash
+curl http://localhost:3000/api/movies/
+```
+
+- Add a movie:
+
+```bash
+curl -X POST http://localhost:3000/api/movies/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Interstellar", "description": "Space exploration"}'
+```
+
+- Get a movie by ID:
+
+```bash
+curl http://localhost:3000/api/movies/1
+```
+
+- Update a movie:
+
+```bash
+curl -X PUT http://localhost:3000/api/movies/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "New Title", "description": "Updated description"}'
+```
+
+- Delete a movie:
+
+```bash
+curl -X DELETE http://localhost:3000/api/movies/1
+```
+
+- Delete all movies:
+
+```bash
+curl -X DELETE http://localhost:3000/api/movies/
+```
+
+### Billing endpoints
+
+- Submit a billing order:
+
+```bash
+curl -X POST http://localhost:3000/api/billing/ \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "123", "number_of_items": "2", "total_amount": "50.00"}'
+```
+
+- Retrieve processed orders:
+
+```bash
+curl http://localhost:3000/api/billing/
+```
+
+> The gateway forwards billing POST requests to RabbitMQ and returns `202 Accepted` once the order is queued.
+
+## How It Works
+
+- `api-gateway` proxies inventory CRUD requests to `inventory-app`.
+- Billing POST requests are published to RabbitMQ by the gateway.
+- `billing-app` consumes the queue and stores orders in `billing-db`.
+- Both databases are isolated in separate PostgreSQL containers.
+- Containers are restarted automatically with `restart: on-failure`.
+
+## Notes
+
+- The project is intentionally Docker-native; there is no Vagrant deployment required in this setup.
+- All service images are built locally from the `srcs/*/Dockerfile` definitions.
+- The API gateway is the only service exposed to the outside world.
+
+## Troubleshooting
+
+- If a service fails to start, inspect logs:
+
+```bash
+docker compose logs <service-name>
+```
+
+- To force rebuild after source changes:
+
+```bash
+docker compose build --no-cache
+```
+
+- If RabbitMQ is unavailable, ensure the `billing-queue` container is healthy and the `.env` variables are correct.
+
+## Project Status
+
+This repository now implements a clean Docker Compose microservices architecture for inventory management and asynchronous billing, replacing the previous Vagrant-based `crud-master` environment.
