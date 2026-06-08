@@ -1,6 +1,18 @@
-# play-with-containers
 
-![Microservices Architecture](./resources/Microservices.png)
+
+<div align="center">
+
+# play-with-containers
+<img src="res/17922_micros.png" width="50%" >
+
+------
+
+>  `play-with-containers` is a Docker Compose-based implementation of a microservices movie platform. It uses containerized Python services, two PostgreSQL databases, a RabbitMQ queue, and an API gateway to deliver a production-like multi-container architecture.
+------
+
+</div>
+
+
 
 ## Overview
 
