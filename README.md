@@ -16,8 +16,6 @@
 
 ## Overview
 
-`play-with-containers` is a Docker Compose-based implementation of a microservices movie platform. It uses containerized Python services, two PostgreSQL databases, a RabbitMQ queue, and an API gateway to deliver a production-like multi-container architecture.
-
 This repository replaces the original Vagrant-based `crud-master` setup with Docker and Docker Compose, making deployment faster, reproducible, and easier to manage on Linux.
 
 ## Architecture
