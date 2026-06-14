@@ -1,6 +1,8 @@
-FROM python:3.10-alpine
+FROM alpine:3.18
 
 WORKDIR /app
+
+RUN apk add --no-cache python3 py3-pip
 
 COPY ./requirements.txt .
 
