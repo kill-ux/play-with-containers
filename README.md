@@ -46,6 +46,9 @@ All containers are connected through a single Docker bridge network and managed 
 - Docker Compose available (`docker compose`)
 - Linux host (Ubuntu tested)
 
+> [!IMPORTANT]
+> we provide a vagrant file so you jaut need to install vagrnat binary and run `vagrnat up` with your best hypervisor like VirtualBox
+
 ## Setup
 
 1. Copy environment variables:
