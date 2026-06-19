@@ -26,14 +26,7 @@ host all all 0.0.0.0/0 scram-sha-256
 EOF
 
     echo "Starting temporary cluster for setup..."
-    # su postgres -c "$PG_BIN/postgres -D '$PGDATA' -k /run/postgresql" &
     su postgres -c "$PG_BIN/pg_ctl -D '$PGDATA' -w start"
-    # TEMP_PID=$!
-
-    # until su postgres -c "$PG_BIN/pg_isready"; do
-    #     echo "Waiting for database to start..."
-    #     sleep 0.5
-    # done
 
     echo "Configuring roles and databases..."
     su postgres -c "$PG_BIN/psql -d postgres -c \"ALTER USER postgres WITH PASSWORD '$DB_PASS';\""
@@ -41,8 +34,6 @@ EOF
     su postgres -c "$PG_BIN/createdb -O $DB_USER $DB_NAME"
 
     echo "Shutting down temporary setup cluster..."
-    # kill $TEMP_PID
-    # wait $TEMP_PID 2>/dev/null || true
     su postgres -c "$PG_BIN/pg_ctl -D '$PGDATA' -m fast stop"
 fi
 
